@@ -2,7 +2,7 @@ import datetime
 import os
 #import time
 #from time import strftime
-
+#igotthis2
 settingsPairs = {
     "Weekday, short version":"a",
     "Weekday, full version":"A",
@@ -23,12 +23,28 @@ settingsPairs = {
     "Timezone":"Z",
     "Day number of year 001-366":"j",
     "Week number of year, Sunday as the first day of week, 00-53":"U",
-    "Week number of year, Monday as the first day of week, 00-53":"W"
+    "Week number of year, Monday as the first day of week, 00-53":"W",
+    "Line Break":"/",
+    "Colon":":",
+    "Comma":",",
+    "Bar":"|",
+    "Space":" ",
+    "User Inputted String":"5"
 }
 
+mutable = {
+    "Weekday":{"a","A","w"},
+    "Month":{"b","B","m"},
+    "Year":{"y","Y"},
+    "Hour":{"I","H"},
+    "Timezone":{"z","Z"},
+    "Week # of year":{"U","W"}
+}
 
+default = "I:M:S p Z/A | d B Y/U | j"
 clockSettings = "I:M:S p Z/A | d B Y/U | j"
-#stringOrder = ["Week of the Year: ","Day of the Year: "]
+preserveStrings = True
+stringOrder = []
 
 def prompt(demand: str, choices: list[str], funcs = None, returns = False, fltr = False):
     print(demand)
@@ -96,32 +112,51 @@ def settings():
     settingVals = "".join(list(settingsPairs.values()))
     removable = [x for x in list(settingsPairs.values()) if x in clockSettings]
     addable = [x for x in list(settingsPairs.values()) if x not in clockSettings]
-    prompt("Settings",["Edit Component","Advanced Settings", "Go Back"], [edit,advSettings,mainMenu])
+    prompt("Settings",["Edit Component","Advanced Settings","Reset Clock to Default", "Go Back"], [edit,advSettings,clockDefault,mainMenu])
 
 
 def advSettings():
     prompt("Advanced Settings",
-           ["Remove Component", "Add Component", "Clear Clock (For custom clocks)", "Get Clock Settings Code","Paste Clock Settings Code", "Go Back"],
-           [remove, add, clear, getClockStr,useClockStr, settings])
-
+           ["Remove Component", "Add Component", "Clear Clock (For custom clocks)", "Get Clock Settings Code","Paste Clock Settings Code","Keep Default Strings", "Go Back"],
+           [remove, add, clear, getClockStr,useClockStr, keepStr, settings])
 
 def remove():
     global clockSettings
-    removableStrings = [x for x in settingsPairs.keys() if settingsPairs[x] in removable]
-    item = settingsPairs[prompt("Removable Items:",removableStrings, returns=True)]
-    clockSettings = clockSettings[:clockSettings.find(item)] + clockSettings[clockSettings.find(item)+1:]
-    print("Successfuly removed component!")
-    settings()
-
-
-def add():
-    global clockSettings
-    item = settingsPairs[prompt("What component would you like to add?",[x for x in settingsPairs.keys() if settingsPairs[x] in addable],returns=True)]
     clock()
     print("")
 
     componentList = []
-    specialchars = "/ :|,"
+    specialchars = "5/ :|,"
+    for i in clockSettings:
+        if i not in specialchars:
+            componentList.append(ctime.strftime(f"%{i}"))
+        else:
+            componentList.append(i)
+
+    i = 0
+    for x in componentList:
+        i += 1
+        if i%4 != 0:
+            print(f" ({x}@{i}) #",end ="")
+        else:
+            print(f" ({x}@{i})")
+
+    pos = promptint(f"\nWhat component would you like to remove? (1-{len(clockSettings)})",[1, len(clockSettings)])
+    clockSettings = clockSettings[:pos-1] + clockSettings[pos:]
+    print("Successfuly removed component!")
+    advSettings()
+
+def add():
+    global clockSettings
+    global stringOrder
+    specialchars = "5/ :|,"
+    item = settingsPairs[prompt("What component would you like to add?",[x for x in settingsPairs.keys() if settingsPairs[x] in addable or settingsPairs[x] in specialchars],returns=True)]
+    if item == "5":
+        stringOrder.append(input("What would you like to include in this string? : "))
+    clock()
+    print("")
+
+    componentList = []
     for i in clockSettings:
         if i not in specialchars:
             componentList.append(ctime.strftime(f"%{i}"))
@@ -137,16 +172,24 @@ def add():
             print(f" ({x}@{i})")
     else:
         print(" (0 for The End)")
-    pos = promptint(f"Where would you would like to add this component? (1-{len(clockSettings)})",[0, len(clockSettings)])
+
+    pos = promptint(f"Where would you would like to add this component before? (1-{len(clockSettings)})",[0, len(clockSettings)])
     if pos == 0:
         clockSettings = clockSettings + item
     else:
         clockSettings = clockSettings[:pos-1] + item + clockSettings[pos-1:]
     print("Successfuly added component!")
-    settings()
+    advSettings()
 
 def edit():
-    pass
+    possibleEdits = []
+    for component in clockSettings:
+        for key in mutable.keys():
+            if component in mutable[key]:
+                possibleEdits.append(key)
+    chosen = prompt("What would you like to edit?",possibleEdits,returns=True)
+    #mutable[chosen]
+    #CONTINUE HERE!!!!!!!
     print("Successfuly changed component!")
     settings()
 
@@ -165,6 +208,7 @@ def useClockStr():
     testSettings = input("Put code here: ")
     try:
         clockSettings = testSettings
+
         clock()
         print("\nCode successfully applied!")
         settings()
@@ -173,17 +217,43 @@ def useClockStr():
         useClockStr()
 
 
+def keepStr():
+    global preserveStrings
+    preserveStrings = not preserveStrings
+    print("String preservation changed.")
+    advSettings()
+
 
 def clock():
-    specialchars = "/ :|,"
+    specialchars = "5/ :|,"
+    x = 0
     for i in clockSettings:
         if i not in specialchars:
-            print(ctime.strftime(f"%{i}"), end = "")
+            if i not in "UWj":
+                print(ctime.strftime(f"%{i}"), end = "")
+            elif preserveStrings:
+                if i == "U":
+                    print("Week of the Year(Sun): " + ctime.strftime(f"%{i}"), end="")
+                elif i == "W":
+                    print("Week of the Year(Mon): " + ctime.strftime(f"%{i}"), end="")
+                else:
+                    print("Day of the Year: " + ctime.strftime(f"%{i}"), end="")
+            else:
+                print(ctime.strftime(f"%{i}"), end="")
         else:
             if i == "/":
                 print("")
+            if i == "5":
+                print(stringOrder[x])
+                x+=1
             if i in " :|,":
                 print(i, end = "")
+
+def clockDefault():
+    global clockSettings
+    clockSettings = default
+    print("Succesfully reset clock settings!")
+    settings()
 
 def exit():
     print("You have successfuly exited the program")
