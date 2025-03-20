@@ -3,6 +3,7 @@ import os
 #import time
 #from time import strftime
 #igotthis2
+
 settingsPairs = {
     "Weekday, short version":"a",
     "Weekday, full version":"A",
@@ -29,7 +30,7 @@ settingsPairs = {
     "Comma":",",
     "Bar":"|",
     "Space":" ",
-    "User Inputted String":"5"
+    "User Inputted String(Must be inputed Linearly)":"5"
 }
 
 mutable = {
@@ -297,6 +298,7 @@ def clock():
                 x+=1
             if i in " :|,":
                 print(i, end = "")
+
 
 def clockDefault():
     global clockSettings
