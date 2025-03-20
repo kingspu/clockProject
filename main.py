@@ -14,7 +14,7 @@ settingsPairs = {
     "Year, short version, without century":"y",
     "Year, full version":"Y",
     "Hour 00-23":"H",
-    "Hour 00-12	":"I",
+    "Hour 00-12":"I",
     "AM/PM":"p",
     "Minute 00-59":"M",
     "Second 00-59":"S",
@@ -182,14 +182,47 @@ def add():
     advSettings()
 
 def edit():
+    global clockSettings
     possibleEdits = []
     for component in clockSettings:
         for key in mutable.keys():
             if component in mutable[key]:
                 possibleEdits.append(key)
-    chosen = prompt("What would you like to edit?",possibleEdits,returns=True)
-    #mutable[chosen]
-    #CONTINUE HERE!!!!!!!
+
+    chosen = prompt("What would you like to edit?\n(This will work poorly if there is more than one of the same type of setting in your clock)",possibleEdits,returns=True)
+    usable = [x for x in mutable[chosen] if x not in clockSettings]
+    usable = [[x for x in settingsPairs.keys() if i == settingsPairs[x]][0] for i in usable]
+
+    try:
+        x = usable[0]
+    except IndexError:
+        print("All versions of this setting are already in the clock")
+        mainMenu()
+
+    chosensquared = prompt(f"What would you like to change {chosen} to?",usable+["Go Back"],returns=True)
+    replace = mutable[chosen] - {chosensquared}
+    replace = [x for x in replace if x in clockSettings][0]
+
+    if chosensquared == "Go Back":
+        settings()
+
+    elif chosensquared == "Hour 00-23":
+        pos = clockSettings.find(replace)
+        clockSettings = clockSettings[:pos] + settingsPairs[chosensquared] + clockSettings[pos + 1:]
+        pos = clockSettings.find("p")
+        clockSettings = clockSettings[:pos] + clockSettings[pos + 1:]
+
+    elif chosensquared == "Hour 00-12":
+        pos = clockSettings.find(replace)
+        clockSettings = clockSettings[:pos] + settingsPairs[chosensquared] + clockSettings[pos + 1:]
+        pos = clockSettings[pos:].find(" ") + pos
+        print(pos)
+        clockSettings = clockSettings[:pos+1] + "p" + clockSettings[pos+1:]
+
+    else:
+        pos = clockSettings.find(replace)
+        clockSettings = clockSettings[:pos] + settingsPairs[chosensquared] + clockSettings[pos + 1:]
+
     print("Successfuly changed component!")
     settings()
 
@@ -200,20 +233,36 @@ def clear():
     settings()
 
 def getClockStr():
-    print(clockSettings)
+    print(f"{clockSettings}#KeepDfStr:{preserveStrings}#{stringOrder}#")
     settings()
 
 def useClockStr():
     global clockSettings
+    global preserveStrings
+    global stringOrder
     testSettings = input("Put code here: ")
-    try:
-        clockSettings = testSettings
+    processedTestSettings = [testSettings[:testSettings.find("#")]]
+    testSettings = testSettings[testSettings.find("#")+1:]
 
+    while testSettings != "":
+        processedTestSettings += [testSettings[:testSettings.find("#")]]
+        testSettings = testSettings[testSettings.find("#") + 1:]
+
+    try:
+        clockSettings = processedTestSettings[0]
+        if "True" in processedTestSettings[1]:
+            preserveStrings = True
+        elif "False" in processedTestSettings[1]:
+            preserveStrings = False
+        else:
+            x = 1/0
+        stringOrder = eval(processedTestSettings[2])
+        print(stringOrder)
         clock()
         print("\nCode successfully applied!")
         settings()
-    except ValueError:
-        print("Code used contains illegal characters.")
+    except (ValueError,IndexError,ZeroDivisionError):
+        print("Code used contains illegal characters OR Is unable to be proccessed.")
         useClockStr()
 
 
@@ -244,7 +293,7 @@ def clock():
             if i == "/":
                 print("")
             if i == "5":
-                print(stringOrder[x])
+                print(stringOrder[x], end = "")
                 x+=1
             if i in " :|,":
                 print(i, end = "")
