@@ -258,7 +258,6 @@ def useClockStr():
         else:
             x = 1/0
         stringOrder = eval(processedTestSettings[2])
-        print(stringOrder)
         clock()
         print("\nCode successfully applied!")
         settings()
@@ -303,6 +302,8 @@ def clock():
 def clockDefault():
     global clockSettings
     clockSettings = default
+    preserveStrings = True
+    stringOrder = []
     print("Succesfully reset clock settings!")
     settings()
 
